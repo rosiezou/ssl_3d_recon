@@ -4,7 +4,7 @@ import argparse
 import time
 import json
 import pdb
-import pprint
+# import pprint
 
 import numpy as np
 import tensorflow as tf
@@ -98,7 +98,7 @@ parser.add_argument('--lambda_symm', type=float, default=0.,
 args = parser.parse_args()
 
 print '*'*50
-pprint.pprint(args)
+# pprint.pprint(args)
 print '*'*50
 
 # Use ground truth pose for training reconstruction network

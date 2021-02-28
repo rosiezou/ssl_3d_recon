@@ -8,7 +8,7 @@ import argparse
 import time
 import json
 import pdb
-import pprint
+# import pprint
 
 import tensorflow as tf
 import numpy as np
@@ -21,9 +21,9 @@ from src.net_archs import recon_net_tiny_rgb_skipconn as recon_net, pose_net
 from src.get_losses import get_3d_loss, get_img_loss, get_pose_loss, get_chamfer_dist
 from src.dataloader import fetch_data
 from src.utils.helper_funcs import create_folder, load_model_from_ckpt, average_stats
-from src.shapenet_taxonomy import shapenet_category_to_id, shapenet_id_to_category
+from src.utils.shapenet_taxonomy import shapenet_category_to_id, shapenet_id_to_category
 
-
+print("I'M HERE")
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--exp', type=str, required=True,
@@ -100,8 +100,9 @@ parser.add_argument('--lambda_symm', type=float, default=0.,
 
 args = parser.parse_args()
 
+print("I've parsed arguments")
 print '*'*50
-pprint.pprint(args)
+# pprint.pprint(args)
 print '*'*50
 
 if args.use_gt_pose:
@@ -127,7 +128,7 @@ else:
     dtypes = ['rgb', 'mask', 'pose']
 
 
-models = np.load('splits/images_list_%s_%s.npy'%(categ, mode))
+models = np.load('splits/images_list_%s_%s.npy'%(categ, mode), allow_pickle = True)
 shuffle_len = len(models)
 print 'Train Categ: ', shapenet_id_to_category[categ], 'Train Models: ', shuffle_len
 

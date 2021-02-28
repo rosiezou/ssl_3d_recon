@@ -19,7 +19,9 @@ import tensorflow as tf
 import tf_nndistance
 import show3d_balls
 from shapenet_taxonomy import shapenet_category_to_id
-from helper_funcs import create_folder, save_screenshots, remove_outliers
+# from helper_funcs import create_folder, save_screenshots, remove_outliers
+from helper_funcs import create_folder, remove_outliers
+
 
 parser = argparse.ArgumentParser()
 
@@ -205,8 +207,8 @@ with tf.Session(config=config) as sess:
                 elif FLAGS.save_outputs:
                     gt_rot = rotate(_pcl_gt[0], 90)
                     pred_rot = rotate(_pcl_out[0], 90)
-                    save_screenshots(gt_rot, pred_rot, ip_img,
-                            out_dir, model_name + '_' + model_id, mode)
+                    # save_screenshots(gt_rot, pred_rot, ip_img,
+                    #         out_dir, model_name + '_' + model_id, mode)
 
             fwd_dist = (fwd_dist / cnt) * 1000
             bwd_dist = (bwd_dist / cnt) * 1000

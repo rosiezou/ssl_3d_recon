@@ -7,7 +7,7 @@ import argparse
 import time
 import json
 import pdb
-import pprint
+# import pprint
 
 import tensorflow as tf
 import numpy as np
@@ -88,7 +88,7 @@ parser.add_argument('--lambda_pose', type=float, default=0.,
 args = parser.parse_args()
 
 print '*'*50
-pprint.pprint(args)
+# pprint.pprint(args)
 print '*'*50
 if args.use_gt_pose:
     print 'GT Pose'

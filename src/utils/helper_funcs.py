@@ -10,8 +10,8 @@ import re
 
 import tensorflow as tf
 import numpy as np
-import show3d_balls
-import cv2
+# import show3d_balls
+# import cv2
 
 
 def create_folder(folders_list):
@@ -234,61 +234,61 @@ def np_rotate(xyz, xangle=0, yangle=0, inverse=False):
     return xyz.dot(rotmat)
 
 
-def save_screenshots(_gt_scaled, _pr_scaled, img, screenshot_dir, fid, eval_set,
-        rgb=False, rgb_feats=None, ballradius=3):
-    '''
-    Save point cloud results as a series of projections from different angles.
-    '''
+# def save_screenshots(_gt_scaled, _pr_scaled, img, screenshot_dir, fid, eval_set,
+#         rgb=False, rgb_feats=None, ballradius=3):
+#     '''
+#     Save point cloud results as a series of projections from different angles.
+#     '''
 
-    # clock, front, anticlock, side, back, top
-    #xangles = np.array([-50, 0, 50, 90, 180, 0]) * np.pi / 180.
-    #yangles = np.array([20, 20, 20, 20, 20, 90]) * np.pi / 180.
+#     # clock, front, anticlock, side, back, top
+#     #xangles = np.array([-50, 0, 50, 90, 180, 0]) * np.pi / 180.
+#     #yangles = np.array([20, 20, 20, 20, 20, 90]) * np.pi / 180.
 
-    xangles = np.array([-50,-30,-10,10,30,50,70,90,110,130,150,170,190,210,230,250,270]) * np.pi / 180.
-    yangles = np.array([10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10])* np.pi / 180.
-    gts = []
-    results = []
-    overlaps = []
+#     xangles = np.array([-50,-30,-10,10,30,50,70,90,110,130,150,170,190,210,230,250,270]) * np.pi / 180.
+#     yangles = np.array([10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10])* np.pi / 180.
+#     gts = []
+#     results = []
+#     overlaps = []
 
-    for xangle, yangle in zip(xangles, yangles):
-            if rgb:
-                gt_rot = show3d_balls.get2Drgb(np_rotate(_gt_scaled, xangle=xangle, yangle=yangle), rgb_feats[0], ballradius=ballradius)
-                result_rot = show3d_balls.get2Drgb(np_rotate(_pr_scaled, xangle=xangle, yangle=yangle), rgb_feats[1], ballradius=ballradius)
-                overlap_rot = show3d_balls.get2Dtwopoints_rgb(np_rotate(_gt_scaled, xangle=xangle, yangle=yangle), np_rotate(_pr_scaled, xangle=xangle, yangle=yangle), rgb_feats[0], rgb_feats[1], ballradius=ballradius)
-            else:
-                gt_rot = show3d_balls.get2D(np_rotate(_gt_scaled, xangle=xangle, yangle=yangle), ballradius=ballradius)
-                result_rot = show3d_balls.get2D(np_rotate(_pr_scaled, xangle=xangle, yangle=yangle), ballradius=ballradius)
-                overlap_rot = show3d_balls.get2Dtwopoints(np_rotate(_gt_scaled, xangle=xangle, yangle=yangle), np_rotate(_pr_scaled, xangle=xangle, yangle=yangle), ballradius=ballradius)
-            gts.append(gt_rot)
-            results.append(result_rot)
-            overlaps.append(overlap_rot)
-    transparent_img=cv2.cvtColor(img, cv2.COLOR_RGB2RGBA)
-    transparent_img[np.all(transparent_img==[0, 0, 0, 255], axis=2)] = [0, 0, 0, 0]
+#     for xangle, yangle in zip(xangles, yangles):
+#             if rgb:
+#                 gt_rot = show3d_balls.get2Drgb(np_rotate(_gt_scaled, xangle=xangle, yangle=yangle), rgb_feats[0], ballradius=ballradius)
+#                 result_rot = show3d_balls.get2Drgb(np_rotate(_pr_scaled, xangle=xangle, yangle=yangle), rgb_feats[1], ballradius=ballradius)
+#                 overlap_rot = show3d_balls.get2Dtwopoints_rgb(np_rotate(_gt_scaled, xangle=xangle, yangle=yangle), np_rotate(_pr_scaled, xangle=xangle, yangle=yangle), rgb_feats[0], rgb_feats[1], ballradius=ballradius)
+#             else:
+#                 gt_rot = show3d_balls.get2D(np_rotate(_gt_scaled, xangle=xangle, yangle=yangle), ballradius=ballradius)
+#                 result_rot = show3d_balls.get2D(np_rotate(_pr_scaled, xangle=xangle, yangle=yangle), ballradius=ballradius)
+#                 overlap_rot = show3d_balls.get2Dtwopoints(np_rotate(_gt_scaled, xangle=xangle, yangle=yangle), np_rotate(_pr_scaled, xangle=xangle, yangle=yangle), ballradius=ballradius)
+#             gts.append(gt_rot)
+#             results.append(result_rot)
+#             overlaps.append(overlap_rot)
+#     transparent_img=cv2.cvtColor(img, cv2.COLOR_RGB2RGBA)
+#     transparent_img[np.all(transparent_img==[0, 0, 0, 255], axis=2)] = [0, 0, 0, 0]
 
-    cv2.imwrite(join(screenshot_dir, '%s_%s_inp.png'%(eval_set, fid)), img)
-    cv2.imwrite(join(screenshot_dir, '%s_%s_inp_alpha_0.png'%(eval_set, fid)), transparent_img)
-    gt = np.concatenate(gts, 1)
-    result = np.concatenate(results, 1)
-    final = np.concatenate((gt, result), 0)
-    mask = np.sum(final, axis=-1, keepdims=True)
-    mask = ((mask>0).astype(final.dtype))*final.max()
-    final = np.concatenate((final, mask), axis=-1)
-    if rgb:
-        cv2.imwrite(join(screenshot_dir, '%s_%s.png'%(eval_set,fid)), cv2.cvtColor(final, cv2.COLOR_RGB2BGR))
-        transparent_im=cv2.cvtColor(final, cv2.COLOR_RGB2RGBA)
-        transparent_im[np.all(transparent_im==[0, 0, 0, 255], axis=2)] = [0, 0, 0, 0]
-        cv2.imwrite(join(screenshot_dir, '%s_%s_alpha_0.png'%(eval_set,fid)), transparent_im)
+#     cv2.imwrite(join(screenshot_dir, '%s_%s_inp.png'%(eval_set, fid)), img)
+#     cv2.imwrite(join(screenshot_dir, '%s_%s_inp_alpha_0.png'%(eval_set, fid)), transparent_img)
+#     gt = np.concatenate(gts, 1)
+#     result = np.concatenate(results, 1)
+#     final = np.concatenate((gt, result), 0)
+#     mask = np.sum(final, axis=-1, keepdims=True)
+#     mask = ((mask>0).astype(final.dtype))*final.max()
+#     final = np.concatenate((final, mask), axis=-1)
+#     if rgb:
+#         cv2.imwrite(join(screenshot_dir, '%s_%s.png'%(eval_set,fid)), cv2.cvtColor(final, cv2.COLOR_RGB2BGR))
+#         transparent_im=cv2.cvtColor(final, cv2.COLOR_RGB2RGBA)
+#         transparent_im[np.all(transparent_im==[0, 0, 0, 255], axis=2)] = [0, 0, 0, 0]
+#         cv2.imwrite(join(screenshot_dir, '%s_%s_alpha_0.png'%(eval_set,fid)), transparent_im)
 
-    else:
-        cv2.imwrite(join(screenshot_dir, '%s_%s.png'%(eval_set,fid)), final)
+#     else:
+#         cv2.imwrite(join(screenshot_dir, '%s_%s.png'%(eval_set,fid)), final)
 
-    save_gifs = True
-    if save_gifs:
-            import imageio
-            final = [np.concatenate((gt,result), 1) for gt,result in zip(gts,results)]
-            imageio.mimsave(join(screenshot_dir, '%s_%s.gif'%(eval_set,fid)), final, 'GIF', duration=0.3)
+#     save_gifs = True
+#     if save_gifs:
+#             import imageio
+#             final = [np.concatenate((gt,result), 1) for gt,result in zip(gts,results)]
+#             imageio.mimsave(join(screenshot_dir, '%s_%s.gif'%(eval_set,fid)), final, 'GIF', duration=0.3)
 
-    return
+#     return
 
 
 def save_outputs(out_dir, iters, feed_dict, img_name):

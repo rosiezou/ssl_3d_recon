@@ -6,9 +6,8 @@ import numpy as np
 from scipy.spatial.distance import cdist as np_cdist
 import tensorflow as tf
 
-import tf_nndistance
-from tf_auctionmatch import auction_match
-
+from chamfer_utils import tf_nndistance
+from chamfer_utils import tf_auctionmatch
 
 def get_img_loss(gt, pred, mode='l2_sq', affinity_loss=False):
     '''
