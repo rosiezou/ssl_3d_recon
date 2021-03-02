@@ -1,0 +1,245 @@
+    1  python --version
+    2  nvidia-smi
+    3  nvcc --version
+    4  sudo apt-get --purge remove cuda nvidia* libnvidia-*
+    5  ps aux | grep -i apt
+    6  sudo kill -9 2679
+    7  sudo kill -9 2685
+    8  ps aux | grep -i apt
+    9  sudo apt-get --purge remove cuda nvidia* libnvidia-*
+   10  ps aux | grep -i apt
+   11  sudo apt-get --purge remove cuda nvidia* libnvidia-*
+   12  sudo killall apt apt-get
+   13  sudo apt-get --purge remove cuda nvidia* libnvidia-*
+   14  sudo lsof /var/lib/dpkg/lock
+   15  sudo kill -9 11635
+   16  sudo lsof /var/lib/dpkg/lock
+   17  sudo kill -9 2712
+   18  sudo lsof /var/lib/dpkg/lock
+   19  sudo lsof /var/lib/apt/lists/lock
+   20  sudo lsof /var/cache/apt/archives/lock
+   21  sudo apt-get --purge remove cuda nvidia* libnvidia-*
+   22  sudo dpkg --configure -a
+   23  sudo apt-get --purge remove cuda nvidia* libnvidia-*
+   24  sudo apt-get --purge remove cuda* nvidia* libnvidia-*
+   25  nvidia-smi
+   26  sudo dpkg -l | grep cuda- | awk '{print $2}' | sudo xargs -n1 dpkg --purge
+   27  sudo dpkg -l | grep cuda- | awk '{print $2}' | xargs -n1 sudo dpkg --purg
+   28  sudo apt-get remove cuda-*
+   29  sudo apt autoremopve
+   30  sudo apt autoremove
+   31  sudo apt-get update
+   32  wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_8.0.61-1_amd64.deb
+   33  dpkg -i --force-overwrite cuda-repo-ubuntu1604_8.0.61-1_amd64.deb
+   34  sudo dpkg -i --force-overwrite cuda-repo-ubuntu1604_8.0.61-1_amd64.deb
+   35  sudo apt-get update
+   36  sudo apt-get install cuda-8-0
+   37  nvcc --version
+   38  nvidia-smi
+   39  wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/nvidia-410_410.48-0ubuntu1_amd64.deb
+   40  sudo dpkg -i --force-overwrite nvidia-410_410.48-0ubuntu1_amd64.deb
+   41  sudo apt --fix-broken install
+   42  sudo apt-get install cuda-8-0
+   43  pip install tensorflow==1.13.2
+   44  python
+   45  git clone https://github.com/klnavaneet/ssl_3d_recon.git
+   46  cd ssl_3d_recon/
+   47  ls
+   48  mv makefile src/
+   49  cd ~/serc
+   50  cd ~/src
+   51  ls
+   52  cd ..
+   53  ls
+   54  cd ~/src
+   55  la
+   56  cd ../ssl_3d_recon/src/
+   57  ls
+   58  cd ../
+   59  ls
+   60  cd src
+   61  ls
+   62  ls ~/src
+   63  ls
+   64  vim makefile 
+   65  make clean
+   66  make
+   67  pip install tflearn
+   68  cd ..
+   69  bash run.sh
+   70  vim makefile 
+   71  cd src
+   72  vim makefile 
+   73  cd ..
+   74  bash run.sh
+   75  vim src/makefile 
+   76  cd src
+   77  make clean
+   78  make all
+   79  ls chamfer_utils/
+   80  ls
+   81  cd ..
+   82  ls
+   83  bash run.sh
+   84  vim src/get_losses.py
+   85  bash run.sh
+   86  cd src/
+   87  make clean
+   88  make all
+   89  bash run.sh
+   90  cd ..
+   91  bash run.sh
+   92  vim src/get_losses.py
+   93  bash run.sh
+   94  vim src/get_losses.py
+   95  bash run.sh
+   96  git status
+   97  cd ~/ssl_3d_recon/src/
+   98  git status
+   99  git rm ../makefile 
+  100  git status
+  101  cd ../..
+  102  cd ssl_3d_recon/
+  103  git status
+  104  git add .gitignore 
+  105  git status
+  106  vim .gitignore 
+  107  git status
+  108  git add src/
+  109  git add .gitignore 
+  110  git status
+  111  git commit
+  112  git status
+  113  git push --repo=https://github.com/thethoughtfulgeek/ssl_3d_recon.git
+  114  git status
+  115  git log
+  116  git config
+  117  ls
+  118  ls -a
+  119  cd .git/info/
+  120  ls
+  121  cd ..
+  122  ls
+  123  cat config 
+  124  ls
+  125  nvcc --version
+  126  python --version
+  127  cd ssl_3d_recon
+  128  ls
+  129  cd src
+  130  make
+  131  make clean
+  132  make
+  133  gcc --version
+  134  ls
+  135  cd ../
+  136  bash run.sh
+  137  sudo apt install tightvncserver
+  138  sudo apt install gnome-panel gnome-settings-daemon metacity nautilus gnome-terminal
+  139  vncserver :1
+  140  emacs -nw ~/.vnc/xstartup
+  141  vncserver -kill :1
+  142  vncserver :1
+  143  ls
+  144  cd ~
+  145  ls
+  146  sudo dpkg -i nomachine_7.1.3_1_amd64.deb
+  147  ls ~/.nx/config
+  148  cp -p .ssh/authorized_keys ~/.nx/config/authorized.crt
+  149  xinput list
+  150  sudo apt install xinput
+  151  xinput list
+  152  setxkbmap -layout English
+  153  pwd
+  154  cd ssl_3d_recon/
+  155  ls
+  156  make clean
+  157  cd src
+  158  make clean
+  159  make
+  160  ls
+  161  cd ..
+  162  ls
+  163  sudo apt-get install libcanberra-gtk-module
+  164  sudo apt-get install libcanberra-gtk-module:i386
+  165  sudo apt-get install libcanberra-gtk-module
+  166  sudo apt update
+  167  Xvfb --help
+  168  xvfb --help
+  169  sudo apt install xvfb
+  170  xvfb --help
+  171  Xvfb :1 -screen 0 1024x768x24 +extension RANDR &
+  172  vncserver :1
+  173  xvfb :1 -screen 0 1024x768x24 +extension RANDR &
+  174  export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/
+  175  cat /.bashrc
+  176  cat ~/.bashrc
+  177  sudo apt-get install xvfb
+  178  xdpyinfo -display :1 | grep "number of extensions"  -A 25
+  179  Xvfb :1 -screen 0 1024x768x24 +extension RANDR
+  180  vncserver -kill :1
+  181  Xvfb :1 -screen 0 1024x768x24 +extension RANDR
+  182  xvfb :1 -screen 0 1024x768x24 +extension RANDR
+  183  sudo apt install xvfb
+  184  sudo apt update
+  185  xvfb :1 -screen 0 1024x768x24 +extension RANDR
+  186  Xvfb :1 -screen 0 1024x768x24 +extension RANDR
+  187  xdpyinfo -display :1 | grep "number of extensions"  -A 25
+  188  vncserver :1
+  189  xdpyinfo -display :1 | grep "number of extensions"  -A 25
+  190  vncserver -kill :1
+  191  vncserver :1 -geometry 1024x768 -randr 1024x768
+  192  python --version
+  193  ls /usr/local/lib
+  194  ls /usr/local/
+  195  ls
+  196  sudo apt-get install ubuntu-desktop
+  197  sudo apt install ubuntu-gnome-desktop
+  198  sudo apt-get install xfce4
+  199  sudo apt-get install lxde
+  200  sudo apt-get install kubuntu-desktop
+  201  sudo apt install tigervnc-standalone-server tigervnc-c
+  202  sudo apt install tigervnc-standalone-server tigervnc-common tigervnc-xorg-extension tigervnc-viewer
+  203  wget -O- http://neuro.debian.net/lists/jessie.de-m.libre | sudo tee /etc/apt/sources.list.d/neurodebian.sources.list
+  204  sudo apt-key adv --recv-keys --keyserver hkp://pool.sks-keyservers.net:80 0xA5D32F012649A5A9
+  205  wget -O- http://neuro.debian.net/lists/xenial.us-ca.libre | sudo tee /etc/apt/sources.list.d/neurodebian.sources.list
+  206  sudo apt-key adv --recv-keys --keyserver hkp://pool.sks-keyservers.net:80 0xA5D32F012649A5A9
+  207  sudo apt-get update
+  208  sudo apt-get install tigervnc-standalone-server
+  209  wget https://bintray.com/artifact/downloa...ntu1_amd64.deb
+  210  sudo dpkg -i tigervncserver_1.6.0-3ubuntu1_amd64.deb
+  211  sudo apt-get -f install
+  212  ls
+  213  wget https://bintray.com/artifact/download/tigervnc/stable/ubuntu-14.04LTS/amd64/tigervncserver_1.6.0-3ubuntu1_amd64.deb
+  214  sudo dpkg -i tigervncserver_1.6.0-3ubuntu1_amd64.deb
+  215  sudo apt-get -f install
+  216  apt search 'vnc.*server' | grep installed
+  217  wget -O- http://neuro.debian.net/lists/xenial.us-nh.libre | sudo tee /etc/apt/sources.list.d/neurodebian.sources.list
+  218  sudo apt-key adv --recv-keys --keyserver hkp://pool.sks-keyservers.net:80 0xA5D32F012649A5A9
+  219  sudo apt-get update
+  220  sudo apt-get install tigervnc-standalone-server
+  221  ls
+  222  sudo dpkg -i tigervncserver_1.6.0-3ubuntu1_amd64.deb
+  223  sudo apt-get install libtasn1-3-bin
+  224  sudo apt-get -f install
+  225  sudp apt-get install libgnutls28
+  226  sudo apt-get install libgnutls28
+  227  sudo apt-get update
+  228  sudo apt-get install libtasn1-3-bin
+  229  sudo apt-get -f install libtasn1-3-bin
+  230  sudo apt-get -f install
+  231  dpkg -L libtasn1-3-bin
+  232  sudo apt-get update
+  233  sudo sudo apt-get update
+  234  sudo apt-get install libtasn1-3-bin
+  235  sudo apt-get install libtasn1-bin
+  236  sudo apt-get install packages (or specify a solution).
+  237  ubuntu@ip-172-31-14-239:~$ sudo apt-get install libtasn1
+  238  sudo apt-get install .3) but it is not going to be installed
+  239  sudo apt-get install kde-config-telepathy-accounts
+  240  sudo apt install kde-telepathy-minimal
+  241  sudo apt-get install kde-telepathy-minimal
+  242  ls
+  243  sudo dpkg -i tigervncserver_1.6.0-3ubuntu1_amd64.deb
+  244  sudo apt-get install libtasn1-3-bin
+  245  history > all_our_failures.txt
