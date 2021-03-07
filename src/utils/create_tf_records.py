@@ -32,9 +32,14 @@ modes = ['train', 'val', 'test']
 def read_img(img_path, cnt=None):
     # Read only one of the projections for each model. Randomly choose the one
     # out of 10 existing projections
+    # if os.path.exists(img_path):
+    #     print("path exists")
     if cnt==None:
         cnt = np.random.randint(0,10)
     if save_img:
+        # fullPath = join(img_path, 'render_%s.png'%cnt)
+        # if os.path.exists(fullPath):
+            # print("full path %s exists"%fullPath)
         with open(join(img_path, 'render_%s.png'%cnt)) as f:
             img_bytes = f.read()
     elif save_mask:
@@ -42,10 +47,35 @@ def read_img(img_path, cnt=None):
             img_bytes = f.read()
 
     img_name = img_path.split('/')[-1]+'_%s'%cnt
-    example = tf.train.Example(features = tf.train.Features(feature = { \
-        'filename': tf.train.Feature(bytes_list=tf.train.BytesList(value=[img_name])),
-        'image': tf.train.Feature(bytes_list=tf.train.BytesList(value=[img_bytes]))}))
+    # print("img_name is %s"%img_name)
+
+    fileNameInput = None
+    imageInput = None
+    featureInput = None
+    example = None
+    try:
+        fileNameInput = tf.train.Feature(bytes_list = tf.train.BytesList(value=[img_name]))
+        imageInput = tf.train.Feature(bytes_list = tf.train.BytesList(value=[img_bytes]))
+    except Exception as expt:
+        print("an exception occurred while instantiating fileNameInput and imageInput")
+        print("exception string is %s"%expt)
+
+    try:
+        featureInput = tf.train.Features(feature = {'filename': fileNameInput, 'image': imageInput})
+    except Exception as expt:
+        print("an exception occurred while instantiating featureInput")
+        print("exception string is %s"%expt)
+
+    try:
+        ## this line is the buggy line
+        ## example = tf.train.Example(features = tf.train.Features(feature = {featureInput}))
+        examples = tf.train.Example(features = featureInput)
+    except Exception as expt:
+        print("an exception occurred while instantiating example")
+        print("exception string is %s"%expt)
+    
     example_str = example.SerializeToString()
+
     return example_str
 
 
@@ -85,7 +115,8 @@ for mode in modes:
         print categ
         overwrite = True
 
-        models = np.load('../../splits/images_list_%s_%s.npy'%(categ, mode))
+        models = np.load('../../splits/images_list_%s_%s.npy'%(categ, mode), allow_pickle=True)
+        print("length of models is", len(models))
         image_ids = [model[0].split('_')[1] for model in models]
         models = [model[0].split('_')[0] for model in models]
         if save_img:
@@ -116,6 +147,9 @@ for mode in modes:
                         print 'Time: ', (time.time() - time_st)//60
                     try:
                         if save_img:
+                            fullPath = join(data_dir, categ, model)
+                            print("full path exists, now trying to figure out what's in image_ids")
+                            print(image_ids[idx])
                             img_str = read_img(join(data_dir, categ, model),
                                     image_ids[idx])
                             writer.write(img_str)
@@ -128,7 +162,8 @@ for mode in modes:
                             writer.write(pcl_str)
                     except KeyboardInterrupt:
                         sys.exit()
-                    except:
+                    except Exception as expt:
+                        print("system error is", expt)
                         N_missing += 1
                         continue
             print 'Time: ', (time.time() - time_st)//60
