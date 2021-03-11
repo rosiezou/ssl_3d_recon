@@ -20,8 +20,8 @@ import numpy as np
 import random
 
 # Set only one of them to be true at a time.
-save_img = False
-save_mask = True
+save_img = True
+save_mask = False
 save_pcl = False
 save_pose = False
 
@@ -184,7 +184,7 @@ for mode in modes:
         print categ
         overwrite = True
         names_file = '../../data/knn_list_%s.npy' % categ
-        models = np.load('../../splits/images_list_%s_%s.npy' % (categ, mode))
+        models = np.load('../../splits/images_list_%s_%s.npy' % (categ, mode), allow_pickle=True)
         image_ids = [model[0].split('_')[1] for model in models]
         models = [model[0].split('_')[0] for model in models]
         if save_similar:

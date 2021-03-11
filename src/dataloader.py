@@ -116,45 +116,54 @@ def fetch_data(records_file, batch_size, data_len, dtype=['rgb'], shuffle=True,
     '''
     datasets = []
     for i, name in enumerate(dtype):
-        datasets.append(tf.contrib.data.TFRecordDataset([records_file[name]]))
+        datasets.append(tf.data.TFRecordDataset([records_file[name]]))
 
     for i, dset in enumerate(datasets):
         if dtype[i]=='rgb':
-            datasets[i] = datasets[i].map(extract_fn, num_threads=num_threads)
+            print('RGB')
+            datasets[i] = datasets[i].map(extract_fn, num_parallel_calls=num_threads)
         if dtype[i]=='rgb_2':
-            datasets[i] = datasets[i].map(extract_fn_2, num_threads=num_threads)
+            print('RGB2')
+	    datasets[i] = datasets[i].map(extract_fn_2, num_parallel_calls=num_threads)
         elif dtype[i]=='mask':
-            datasets[i] = datasets[i].map(extract_fn_mask, num_threads=6)
+            print('mask')
+            datasets[i] = datasets[i].map(extract_fn_mask, num_parallel_calls=6)
         elif dtype[i]=='mask_2':
-            datasets[i] = datasets[i].map(extract_fn_mask_2, num_threads=6)
+            print('mask_2')
+	    datasets[i] = datasets[i].map(extract_fn_mask_2, num_parallel_calls=6)
         elif dtype[i]=='partseg':
-            datasets[i] = datasets[i].map(extract_fn_partseg, num_threads=6)
+            datasets[i] = datasets[i].map(extract_fn_partseg, num_parallel_calls=6)
         elif dtype[i]=='pcl':
-            datasets[i] = datasets[i].map(extract_fn_pcl, num_threads=6)
+            print('pcl')
+            datasets[i] = datasets[i].map(extract_fn_pcl, num_parallel_calls=6)
         elif dtype[i]=='pose':
-            datasets[i] = datasets[i].map(extract_fn_pose, num_threads=6)
+            print('pose')
+            datasets[i] = datasets[i].map(extract_fn_pose, num_parallel_calls=6)
 
-    dataset = tf.contrib.data.TFRecordDataset.zip(tuple(datasets)).repeat(1000)
+    dataset = tf.data.TFRecordDataset.zip(tuple(datasets)).repeat(1000)
     if shuffle:
-	dataset = dataset.shuffle(data_len)
-    dataset = dataset.batch(batch_size)
+        dataset = dataset.shuffle(data_len)
+        dataset = dataset.batch(batch_size)
+        print("batch size is", batch_size)
+
     iterator = dataset.make_one_shot_iterator()
     next_element = iterator.get_next()
+    print(next_element)
     return next_element
 
 
 # Fetch all data - mask, rgb, segmentation
 def fetch_data_all(records_file, batch_size, data_len):
-    dataset_rgb = tf.contrib.data.TFRecordDataset([records_file['rgb']])
+    dataset_rgb = tf.data.TFRecordDataset([records_file['rgb']])
     dataset_rgb = dataset_rgb.map(extract_fn, num_threads=6)
 
-    dataset_mask = tf.contrib.data.TFRecordDataset([records_file['mask']])
+    dataset_mask = tf.data.TFRecordDataset([records_file['mask']])
     dataset_mask = dataset_mask.map(extract_fn_mask, num_threads=6)
 
-    dataset_partseg = tf.contrib.data.TFRecordDataset([records_file['partseg']])
+    dataset_partseg = tf.data.TFRecordDataset([records_file['partseg']])
     dataset_partseg = dataset_partseg.map(extract_fn_partseg, num_threads=6)
 
-    dataset = tf.contrib.data.TFRecordDataset.zip((dataset_rgb, dataset_mask,
+    dataset = tf.data.TFRecordDataset.zip((dataset_rgb, dataset_mask,
         dataset_partseg))
 
     dataset = dataset.shuffle(data_len)

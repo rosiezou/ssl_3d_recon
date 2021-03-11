@@ -18,6 +18,7 @@ def create_folder(folders_list):
     for folder in folders_list:
         if not os.path.exists(folder):
             os.makedirs(folder)
+            print('Created folder at ', folder)
 
 
 def load_model_from_ckpt(sess, saver, ckpt_folder):

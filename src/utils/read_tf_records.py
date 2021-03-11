@@ -10,6 +10,7 @@ import os, sys
 from os.path import join, abspath, basename
 import glob
 import time
+import pdb
 
 import tensorflow as tf
 import numpy as np
@@ -95,10 +96,10 @@ modes = ['test']
 
 for mode in modes:
     for categ in categs:
-        read_img = False
+        read_img = True
         read_mask = False
         read_pose = False
-        read_pcl = True
+        read_pcl = False
         if read_img:
             records_file = abspath('../../data/%s_%s_image.tfrecords'%(categ, mode))
         elif read_mask:
@@ -110,16 +111,15 @@ for mode in modes:
 
 
         models = sorted(os.listdir(join(data_dir, categ)))
-
-        dataset = tf.contrib.data.TFRecordDataset([records_file])
+        dataset = tf.data.TFRecordDataset([records_file])
         if read_img:
-            dataset = dataset.map(extract_fn, num_threads=6)
+            dataset = dataset.map(extract_fn, num_parallel_calls=6)
         if read_mask:
-            dataset = dataset.map(extract_fn_mask, num_threads=6)
+            dataset = dataset.map(extract_fn_mask, num_parallel_calls=6)
         elif read_pose:
-            dataset = dataset.map(extract_fn_pose, num_threads=6)
+            dataset = dataset.map(extract_fn_pose, num_parallel_calls=6)
         elif read_pcl:
-            dataset = dataset.map(extract_fn_pcl, num_threads=6)
+            dataset = dataset.map(extract_fn_pcl, num_parallel_calls=6)
         dataset = dataset.batch(batch_size)
         iterator = dataset.make_initializable_iterator()
         init_op = iterator.initializer
@@ -147,12 +147,13 @@ for mode in modes:
             except:
                 # Verify that the images were written and read correctly
                 if verify:
+	 	    print('Number of names: ', len(names))
                     for idx, name in enumerate(names):
                         if idx%1000==0:
                             print idx, '/', len(names)
                             print 'diff: ', diff
                         if read_img:
-                            pdb.set_trace()
+                        #    pdb.set_trace()
                             model_name, model_num = name[0].split('_')
                             img = sc.imread(join(data_dir,categ,model_name,'render_%s.png'%model_num))
                             diff += np.mean(np.abs(img[:,:,:3]-images[idx][0]))
@@ -170,11 +171,11 @@ for mode in modes:
                                     ' ')[:2]]
                             diff += np.mean(np.abs(angle-images[idx]))
                         elif read_pcl:
-                            pdb.set_trace()
+                         #   pdb.set_trace()
                             model_name = name[0].split('_')[0]
-                            pcl = np.load(join(data_dir_pcl,categ,model_name,'pcl_1024_fps_trimesh_colors.npy'))
+                            pcl = np.load(join(data_dir_pcl,categ,model_name,'pointcloud_1024.npy'))
                             diff += np.mean(np.abs(pcl-np.reshape(images[idx],
-                                (1024,6))))
+                                (3072,6))))
 
                     print 'Error: ', diff
 
