@@ -2,3 +2,6 @@
 *_so.so
 *_g.cu.o
 *.png
+data/*
+.ipynb_checkpoints
+expts/*

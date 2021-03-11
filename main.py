@@ -113,11 +113,16 @@ os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu)
 categ = shapenet_category_to_id[args.categ]
 mode = 'train'
 
-print 'Full Shapnet Data'
+print 'Full Shapenet Data'
 data_dir = './data/ShapeNet_rendered/%s' % categ
 tfrecords_file_rgb = './data/%s_%s_image.tfrecords' % (categ, mode)
 tfrecords_file_mask = './data/%s_%s_mask.tfrecords' % (categ, mode)
 tfrecords_file_pose = './data/%s_%s_pose.tfrecords' % (categ, mode)
+
+print('Data dir: ', data_dir)
+print('TF records file RGB path: ', tfrecords_file_rgb)
+print('TF records file Mask path: ', tfrecords_file_mask)
+print('TF records file Pose path: ', tfrecords_file_pose)
 
 if not args.use_gt_pose:
     tfrecords_file = {'rgb': tfrecords_file_rgb, 'mask': tfrecords_file_mask}
@@ -135,25 +140,33 @@ print 'Train Categ: ', shapenet_id_to_category[categ], 'Train Models: ', shuffle
 # Log directories
 BASE_DIR = './'
 exp_dir = join(BASE_DIR, args.exp)
+print('Experiment directory ', exp_dir)
 ckpt_dir = join(BASE_DIR, args.exp, 'checkpoints')
+print('Checkpoint directory ', ckpt_dir)
 logs_dir = join(BASE_DIR, args.exp, 'logs')
+print('Log dir: ', logs_dir)
 log_file = join(args.exp, 'logs.txt')
 proj_images_dir = join(BASE_DIR, args.exp, 'log_proj_images')
+print('proj_images_dir ', proj_images_dir)
 proj_pcl_dir = join(BASE_DIR, args.exp, 'log_proj_pcl')
+print('proj_pcl_dir ', proj_pcl_dir)
 create_folder([ckpt_dir, logs_dir, proj_images_dir,
                proj_pcl_dir])
 
 filename = basename(__file__)
 os.system('cp %s %s'%(filename, exp_dir))
+print('Copying filename ', filename, ' to exp_dir ', exp_dir)
+print('Category of object: ', args.categ)
 if args.categ == 'car':
     filename_bash = 'run.sh'
 else:
     filename_bash = 'chair_run.sh'
 os.system('cp %s %s'%(filename_bash, exp_dir))
+print('Copied bash file ', filename_bash, ' to ', exp_dir)
 args_file = join(logs_dir, 'args.json')
 with open(args_file, 'w') as f:
     json.dump(vars(args), f, ensure_ascii=False, indent=2, sort_keys=True)
-
+print('Dumped args to json file at ', args_file)
 
 def save_outputs(out_dir, iters, feed_dict, img_name):
     _img, _mask, pose, _pose_out = sess.run([img_out, mask_out, pose_all[0],
@@ -317,6 +330,7 @@ with tf.Session(config=config) as sess:
         st_iters = 0
 
     # Load input data
+    print('Loading input data from file at ', tfrecords_file)
     next_element = fetch_data(tfrecords_file, args.batch_size,
             shuffle_len, dtype=dtypes)
 
