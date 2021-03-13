@@ -29,6 +29,8 @@ def load_model_from_ckpt(sess, saver, ckpt_folder):
         saver.restore(sess, os.path.abspath(ckpt.model_checkpoint_path))
         st_iters = int(re.match('.*-(\d*)$', ckpt.model_checkpoint_path).group(1))
         init_flag = False
+    else:
+        print('No checkpoint found in ', ckpt_folder)
     return st_iters+1
 
 
@@ -309,9 +311,9 @@ def save_outputs(out_dir, iters, feed_dict, img_name):
             i, pose[i,0]*(180./np.pi), pose[i,1]*(180./np.pi)), _img[i])
         sc.imsave('%s/%d_%s_pred_%d_pose_%d_%d_mask.png'%(out_dir, iters, img_name[0],
             i, pose[i,0]*(180./np.pi), pose[i,1]*(180./np.pi)), _mask[i])
-        print 'Px: %03d, Prx: %03d, Py: %03d, Pry: %03d' % (pose[i,0]*(180./np.pi),
-            _pose_out[i][0,0]*(180./np.pi), pose[i,1]*(180./np.pi),
-            _pose_out[i][0,1]*(180./np.pi))
+        # print 'Px: %03d, Prx: %03d, Py: %03d, Pry: %03d' % (pose[i,0]*(180./np.pi),
+        #     _pose_out[i][0,0]*(180./np.pi), pose[i,1]*(180./np.pi),
+        #     _pose_out[i][0,1]*(180./np.pi))
     return True
 
 

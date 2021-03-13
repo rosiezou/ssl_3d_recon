@@ -313,7 +313,7 @@ for idx, name in enumerate(loss_names):
 train_summ = tf.summary.merge(loss_summ)
 
 # Define savers to load and store models
-saver = tf.train.Saver(max_to_keep=2, keep_checkpoint_every_n_hours=2)
+saver = tf.train.Saver(max_to_keep=2, keep_checkpoint_every_n_hours=4)
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True

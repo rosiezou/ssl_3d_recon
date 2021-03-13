@@ -17,7 +17,8 @@ import scipy.misc as sc
 import tensorflow as tf
 
 import tf_nndistance
-import show3d_balls
+# import pdb
+# import show3d_balls
 from shapenet_taxonomy import shapenet_category_to_id
 # from helper_funcs import create_folder, save_screenshots, remove_outliers
 from helper_funcs import create_folder, remove_outliers
@@ -133,11 +134,22 @@ def get_feed_dict(cnt, batch_size, models):
             pred_pcl = np.load(model).astype(np.float32)
             model_name = model.split('/')[-1].split('_')[0]
             gt_pcl = np.load(join(gt_pcl_dir, model_name,
-                'pcl_1024_fps_trimesh.npy')).astype(np.float32)
+                'pointcloud_1024.npy')).astype(np.float32)
             if FLAGS.rotate:
                 pred_pcl = rotate(rotate(pred_pcl[:,:3], 0, 90), 90, 0)
-            gt.append(gt_pcl[:,:3])
-            pred.append(pred_pcl[:,:3])
+            
+            # print("dimensions of pred_pcl", pred_pcl.shape)
+            # print("dimensions of gt_pcl", gt_pcl.shape)
+
+            gt_pcl_subset = gt_pcl[:,:3]
+            pred_pcl_subset = pred_pcl[:,:3]
+            
+            # print("dimensions of gt_pcl_subset", gt_pcl_subset.shape)
+            # print("dimensions of pred_pcl_subset", pred_pcl_subset.shape)
+
+            gt.append(gt_pcl_subset)
+            pred.append(pred_pcl_subset)
+            
 	except KeyboardInterrupt:
 	    sys.exit()
         except:
@@ -166,13 +178,19 @@ with tf.Session(config=config) as sess:
             categ_id = shapenet_category_to_id[categ]
             N_ERR = 0
             fwd_dist = 0.; bwd_dist = 0.; chamfer_dist = 0.;
-            pred_dir = join(FLAGS.exp, 'log_proj_pcl_%s_aligned'%mode)
+            pred_dir = join(FLAGS.exp, 'log_proj_pcl_%s_rot'%mode)
+            # print("pred_dir is", pred_dir)
             gt_pcl_dir = '../../data/ShapeNet_v1/%s'%(categ_id)
+            # print("gt_pcl_dir is", gt_pcl_dir)
             img_data_dir = '../../data/ShapeNet_rendered/%s'%(categ_id)
-            img_models = sorted(np.load('../../splits/images_list_%s_%s.npy'%(categ_id, mode)))
+            # print("img_data_dir is", img_data_dir)
+            img_models = sorted(np.load('../../splits/images_list_%s_%s.npy'%(categ_id, mode), allow_pickle=True))
 
             models = sorted(glob.glob(join(pred_dir, '*_pred.npy')))
-            print len(models)
+            # print("length of models is", len(models))
+
+
+            count = 0
 
             for cnt in range(len(models)//FLAGS.batch_size):
                 if cnt%100==0:
@@ -188,7 +206,7 @@ with tf.Session(config=config) as sess:
                         feed_dict)
                 _pcl_gt, _pcl_out = sess.run([pcl_gt_scaled, pcl_out_scaled],
                         feed_dict)
-                pdb.set_trace()
+                # pdb.set_trace()
 
                 N_ERR += n_err
                 fwd_dist += np.mean(fwd)
@@ -196,12 +214,13 @@ with tf.Session(config=config) as sess:
                 chamfer_dist += np.mean(chamfer)
 
                 if FLAGS.display:
-                    cv2.imshow('img', ip_img)
-                    _pcl_gt[0] = rotate(_pcl_gt[0], 90, 90)
-                    _pcl_out[0] = rotate(_pcl_out[0], 90, 90)
-                    show3d_balls.showpoints(_pcl_gt[0], ballradius=3)
-                    show3d_balls.showpoints(_pcl_out[0], ballradius=3)
-                    saveBool = show3d_balls.showtwopoints(_pcl_gt[0], _pcl_out[0], ballradius=3)
+                    print("disabling display option in VM")
+                    # cv2.imshow('img', ip_img)
+                    # _pcl_gt[0] = rotate(_pcl_gt[0], 90, 90)
+                    # _pcl_out[0] = rotate(_pcl_out[0], 90, 90)
+                    # show3d_balls.showpoints(_pcl_gt[0], ballradius=3)
+                    # show3d_balls.showpoints(_pcl_out[0], ballradius=3)
+                    # saveBool = show3d_balls.showtwopoints(_pcl_gt[0], _pcl_out[0], ballradius=3)
                     print 'Model:%s, Ch:%.5f, fwd:%.5f, bwd:%.5f'%(model_name, chamfer, fwd, bwd)
 
                 elif FLAGS.save_outputs:
@@ -210,9 +229,12 @@ with tf.Session(config=config) as sess:
                     # save_screenshots(gt_rot, pred_rot, ip_img,
                     #         out_dir, model_name + '_' + model_id, mode)
 
-            fwd_dist = (fwd_dist / cnt) * 1000
-            bwd_dist = (bwd_dist / cnt) * 1000
-            chamfer_dist = (chamfer_dist / cnt) * 1000
+                count = cnt
+
+            ## TODO: double-check if this denominator is correct
+            fwd_dist = (fwd_dist / count) * 1000
+            bwd_dist = (bwd_dist / count) * 1000
+            chamfer_dist = (chamfer_dist / count) * 1000
 
             print 'N_ERR', N_ERR
             print 'Categ: %s, Mode: %s, Chamfer: , Fwd:  Bwd: %.3f, %.3f, %.3f'%(categ, mode, chamfer_dist, fwd_dist, bwd_dist)

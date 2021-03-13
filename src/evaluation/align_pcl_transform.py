@@ -32,13 +32,19 @@ print_n = 100
 save_outputs = True
 
 # Change experiment directory as required
-exp_dir = '../../expts/temp'
-pred_pcl_dir = join(exp_dir, 'log_proj_pcl_val')
+exp_dir = 'SAVED_PCL/expts/temp'
+
+## this is hard coded...again...
+## log_proj_pcl_$MODE is the regex for it, MODE is set in save_pcl flags
+pred_pcl_dir = join(exp_dir, 'log_proj_pcl_disp_test')
+print("pred_pcl_dir is", pred_pcl_dir)
+
 gt_pcl_dir = '../../data/ShapeNet_v1/%s'%categ
 out_dir = join(exp_dir, 'log_proj_pcl_test_rot')
 if not os.path.exists(out_dir):
     os.makedirs(out_dir)
 
+# @Rosie: This line doesn't work.
 models_list = sorted(glob.glob(join(pred_pcl_dir, '*.npy')))
 N_MODELS = len(models_list)
 random.shuffle(models_list)
@@ -47,14 +53,23 @@ def get_feed_dict(cnt, models_list):
     pred_pcl_list = []; gt_pcl_list = [];
     for i in range(batch_size):
         idx = (cnt+i)%len(models_list)
+        # print("index is", idx)
+        fullPath = models_list[idx].split('/')
+        # print("fullPath in components:", fullPath)
+
         model_name = models_list[idx].split('/')[-1].split('_')[1]
         _pred_pcl = np.load(models_list[idx])[:,:3]
+
+        # print("model name is", model_name)
+        # print("model_list first element is", models_list[0])
+        # print("pred_pcl_dir is", pred_pcl_dir)
         _gt_pcl = np.load(join(gt_pcl_dir, model_name,
-            'pcl_1024_fps_trimesh.npy'))
+            'pointcloud_1024.npy'))
         gt_pcl_list.append(_gt_pcl)
         pred_pcl_list.append(_pred_pcl)
     pred_pcl_list = np.stack(pred_pcl_list, 0)
     gt_pcl_list = np.stack(gt_pcl_list, 0)
+
     feed_dict = {gt_pcl: gt_pcl_list, pred_pcl: pred_pcl_list}
     return feed_dict
 
@@ -137,6 +152,7 @@ with tf.Session(config=config) as sess:
             np.savetxt(join(out_dir, model_name + '_pred.xyz'), _pred_pcl)
             np.savetxt(join(out_dir, model_name + '_gt.xyz'),
                     feed_dict[gt_pcl][0])
+            print("saving output to", join(out_dir, model_name+'_pred.npy'))
             np.save(join(out_dir, model_name+'_pred.npy'), _pred_pcl)
 
         _rotmat, _angles = sess.run([rot_mat, angles], feed_dict)

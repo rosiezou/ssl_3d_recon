@@ -1,9 +1,10 @@
 python main.py \
 	--exp ./expts/_temp\
 	--gpu 1 \
+	--load_model \
 	--dataset shapenet_train \
 	--_3d_loss_type init_model \
-	--categ chair \
+	--categ car \
 	--loss bce\
 	--affinity_loss \
 	--optimise_pose \

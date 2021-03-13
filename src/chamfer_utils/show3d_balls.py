@@ -2,7 +2,7 @@ import numpy as np
 import ctypes as ct
 import cv2
 import sys
-import pdb 
+# import pdb
 showsz=800
 mousex,mousey=0.5,0.5
 zoom=1.0
@@ -60,7 +60,7 @@ def get2D(xyz, partseg=False, labels=None, ballradius=7, background=(0,0,0), sho
 		c0 = np.zeros((len(xyz),),dtype='float32')+144 #G
 		c1 = np.zeros((len(xyz),),dtype='float32')+30 #R
 		c2=np.zeros((len(xyz),),dtype='float32')+255 #B
-                
+
                 # Grey
 #		c0 = np.zeros((len(xyz),),dtype='float32')+127 #G
 #		c1 = np.zeros((len(xyz),),dtype='float32')+127 #R
@@ -152,7 +152,7 @@ def get2Dtwopoints(xyz,xyz_pred,c0_pred=green,c1_pred=red,c2_pred=blue,backgroun
 	render()
 	return show
 
-	
+
 
 def showpoints_partseg(xyz,labels,c0=None,c1=None,c2=None,waittime=0,showrot=False,magnifyBlue=0,freezerot=False,background=(0,0,0),normalizecolor=True,ballradius=10):
 	global showsz,mousex,mousey,zoom,changed
@@ -250,7 +250,7 @@ def showpoints_partseg(xyz,labels,c0=None,c1=None,c2=None,waittime=0,showrot=Fal
 			cv2.imwrite('show3d.png',show)
 		if waittime!=0:
 			break
-	return cmd	
+	return cmd
 
 
 def showtwopoints(xyz,xyz_pred,c0_pred=green,c1_pred=red,c2_pred=blue,waittime=0,showrot=False,magnifyBlue=0,freezerot=False,background=(0,0,0),ballradius=10):
@@ -362,7 +362,7 @@ def showtwopoints(xyz,xyz_pred,c0_pred=green,c1_pred=red,c2_pred=blue,waittime=0
 		if waittime!=0:
 			break
 	return cmd
-	
+
 def showpoints(xyz,c0=None,c1=None,c2=None,waittime=0,showrot=False,magnifyBlue=0,freezerot=False,background=(0,0,0),normalizecolor=True,ballradius=10):
 	global showsz,mousex,mousey,zoom,changed
 	# xyz=xyz-xyz.mean(axis=0)

@@ -1,5 +1,5 @@
 python save_pcl.py \
-	--exp ../../expts/temp\
+	--exp SAVED_PCL/expts/temp\
 	--gpu 1 \
 	--dataset shapenet\
 	--pred_disp \

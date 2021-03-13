@@ -24,6 +24,7 @@ from dataloader import fetch_data
 from helper_funcs import create_folder, load_model_from_ckpt, average_stats
 from shapenet_taxonomy import shapenet_category_to_id, shapenet_id_to_category
 
+import gc
 
 parser = argparse.ArgumentParser()
 
@@ -98,7 +99,7 @@ os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu)
 categ = shapenet_category_to_id[args.categ]
 mode = args.mode
 
-print 'Full Shapnet Data'
+print 'Full Shapenet Data'
 data_dir = '../../data/ShapeNet_rendered/%s'%categ
 tfrecords_file_rgb = '../../data/%s_%s_image.tfrecords'%(categ, mode)
 tfrecords_file_mask = '../../data/%s_%s_mask.tfrecords'%(categ, mode)
@@ -112,7 +113,7 @@ else:
             'pose': tfrecords_file_pose}
     dtypes = ['rgb', 'mask', 'pose']
 
-models = np.load('../../splits/images_list_%s_%s.npy'%(categ, mode))
+models = np.load('../../splits/images_list_%s_%s.npy'%(categ, mode), allow_pickle=True)
 shuffle_len = len(models)
 print 'Categ: ', shapenet_id_to_category[categ], 'Models: ', shuffle_len
 
@@ -146,34 +147,38 @@ def save_outputs(out_dir, iters, feed_dict, img_name):
     _img = np.stack(_img, axis=1)[0]
     _mask = np.stack(_mask, axis=1)[0]
     # Normalize to [0,255]
-    _img = _img*255
-    _mask = _mask*255
+    _img *= 255
+    _mask *= 255
 
-    sc.imsave('%s/%d_%s_gt_pose_%d_%d.png'%(out_dir, iters, img_name[0],
+    sc.imsave('%s/%d_%s_gt_pose_%d_%d.png'%(out_dir, iters, img_name,
         pose[0,0]*(180./np.pi), pose[0,1]*(180./np.pi)), feed_dict[img_ip][0]*255)
-    sc.imsave('%s/%d_%s_gt_pose_%d_%d_mask.png'%(out_dir, iters, img_name[0],
+    sc.imsave('%s/%d_%s_gt_pose_%d_%d_mask.png'%(out_dir, iters, img_name,
         pose[0,0]*(180./np.pi), pose[0,1]*(180./np.pi)), feed_dict[mask_ip][0]*255)
     for i in range(args.N_PROJ):
-        sc.imsave('%s/%d_%s_pred_%d_pose_%d_%d.png'%(out_dir, iters, img_name[0],
+        sc.imsave('%s/%d_%s_pred_%d_pose_%d_%d.png'%(out_dir, iters, img_name,
             i, pose[i,0]*(180./np.pi), pose[i,1]*(180./np.pi)), _img[i])
-        sc.imsave('%s/%d_%s_pred_%d_pose_%d_%d_mask.png'%(out_dir, iters, img_name[0],
+        sc.imsave('%s/%d_%s_pred_%d_pose_%d_%d_mask.png'%(out_dir, iters, img_name,
             i, pose[i,0]*(180./np.pi), pose[i,1]*(180./np.pi)), _mask[i])
-    return True
+    # return True
 
 
 def save_outputs_pose(out_dir, iters, feed_dict, img_name):
     pose = sess.run(pose_all[0], feed_dict)[0]
-    np.save('%s/%d_%s_pred_pose.npy'%(out_dir, iters, img_name[0]), pose)
-    np.savetxt('%s/%d_%s_pred_pose.txt'%(out_dir, iters, img_name[0]), pose)
+    print('pose img name', img_name)
+    np.save('%s/%d_%s_pred_pose.npy'%(out_dir, iters, img_name), pose)
+    np.savetxt('%s/%d_%s_pred_pose.txt'%(out_dir, iters, img_name), pose)
 
 
 def save_outputs_pcl(out_dir, iters, feed_dict, img_name):
+    print("out_dir is", out_dir)
     _pcl = sess.run([pcl_out[0], pcl_rgb_out[0]], feed_dict)
     _pcl = np.concatenate(_pcl, axis=2)
     for i in range(args.batch_size):
-        np.save('%s/%d_%s_pcl.npy'%(out_dir, iters, img_name[i]), _pcl[i])
-        np.savetxt('%s/%d_%s_pcl.txt'%(out_dir, iters, img_name[i]), _pcl[i])
-    return _pcl
+        outFileName = out_dir + "/" + str(iters) + "_" + img_name + "_pcl.npy"
+        print("output file name is", outFileName)
+        np.save('%s/%d_%s_pcl.npy'%(out_dir, iters, img_name), _pcl[i])
+        np.savetxt('%s/%d_%s_pcl.txt'%(out_dir, iters, img_name), _pcl[i])
+    # return _pcl
 
 # Create Placeholders
 img_ip = tf.placeholder(tf.float32, (args.batch_size, args.H, args.W, 3),
@@ -227,13 +232,12 @@ for idx in range(args.N_PROJ):
 recon_vars = [var for var in tf.global_variables() if 'recon' in var.name]
 pose_vars = [var for var in tf.global_variables() if 'pose' in var.name]
 
-saver = tf.train.Saver(max_to_keep=2, keep_checkpoint_every_n_hours=2)
+saver = tf.train.Saver(max_to_keep=2, keep_checkpoint_every_n_hours=4)
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 
 with tf.Session(config=config) as sess:
-
     train_writer = tf.summary.FileWriter(logs_dir, sess.graph_def)
     sess.run(tf.global_variables_initializer())
     if args.load_model:
@@ -261,28 +265,58 @@ with tf.Session(config=config) as sess:
         img = img.astype(np.float32) / 255.
         mask = mask.astype(np.float32) / 255.
 
+        h,w,rgb = img.shape
         if args.use_gt_pose:
-            feed_dict = {img_ip: img, mask_ip: mask[:,:,:,0], pose_gt: pose}
+            feed_dict = {img_ip: np.expand_dims(img, axis=0), mask_ip: np.array(mask).reshape(1, h, w), pose_gt: pose}
+            return feed_dict, img_name
+            # feed_dict = {img_ip: img, mask_ip: mask[:,:,:,0], pose_gt: pose}
         else:
-            feed_dict = {img_ip: img, mask_ip: mask[:,:,:,0]}
-        return feed_dict, img_name
+            return {img_ip: np.expand_dims(img, axis = 0), mask_ip: np.expand_dims(mask[:,:,0], axis=0)}, img_name
+            # feed_dict = {img_ip: img, mask_ip: mask[:,:,:,0]}
 
-    if st_iters == 0:
-        print_str = 'Iters   Total     2D      Mask     Pose   Time \n'
-        with open(log_file, 'w') as f:
-            f.write(print_str)
+    # if st_iters == 0:
+    #     print_str = 'Iters   Total     2D      Mask     Pose   Time \n'
+    #     with open(log_file, 'w') as f:
+    #         f.write(print_str)
 
     time_st = time.time()
     batch_out_mean = [0.] * 5
-    for iters in range(0, shuffle_len // args.batch_size):
+    output_batch_size = shuffle_len // args.batch_size
+    # Manual hacky step: Divide the range into small batches of 500 samples each based on the output batch size.
+    # If training with different data, check output_batch_size again.
+    # For CAR category: output_batch_size = 1500. Divide into 3 batches of 500 each.
+    for iters in range(0, output_batch_size):
         if iters % 50 == 0:
             print iters, '/', shuffle_len // args.batch_size
-
-        feed_dict, img_name = get_feed_dict()
-
         if iters % args.save_n == 0:
+            try:
+                print('Iteration num: ', str(iters))
+                feed_dict, img_name = get_feed_dict()
+                print('Image name: ', img_name)
+            except Exception as expt:
+                print("An exception occurred at iteration", str(iters))
+                continue
             # Save output point clouds, mask and image projections and
             # predicted pose
-            save_outputs(proj_images_dir, st_iters, feed_dict, img_name)
-            save_outputs_pcl(proj_pcl_dir, st_iters, feed_dict, img_name)
-            save_outputs_pose(proj_pose_dir, st_iters, feed_dict, img_name)
+            # try:
+            #     save_outputs(proj_images_dir, st_iters, feed_dict, img_name)
+            # except Exception as expt:
+            #     print("an exception occurred when running save_outputs")
+            #     print("exception string is", expt)
+            #     continue
+            try:
+                save_outputs_pcl(proj_pcl_dir, st_iters, feed_dict, img_name)
+            except Exception as expt:
+                print("an exception occurred when running save_outputs_pcl")
+                print("exception string is", expt)
+                continue
+
+            try:
+                save_outputs_pose(proj_pose_dir, st_iters, feed_dict, img_name)
+            except Exception as expt:
+                print("an exception occurred when running save_outputs_pose")
+                print("exception string is", expt)
+                continue
+            # Default Garbage collection
+            # gc.collect()
+    print("PCL models saved to", proj_pcl_dir)

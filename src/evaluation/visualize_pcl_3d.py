@@ -58,9 +58,9 @@ def viz_pcl(ballradius=3):
         ip_img = np.flip(ip_img[:,:,:3], -1)
         cv2.imshow('', ip_img)
 
-        show3d_balls.showpoints(gt_pcl, ballradius=ballradius)
-        show3d_balls.showpoints(pcl, ballradius=ballradius)
-        saveBool = show3d_balls.showtwopoints(gt_pcl, pcl, ballradius=ballradius)
+        # show3d_balls.showpoints(gt_pcl, ballradius=ballradius)
+        # show3d_balls.showpoints(pcl, ballradius=ballradius)
+        # saveBool = show3d_balls.showtwopoints(gt_pcl, pcl, ballradius=ballradius)
 
 
 viz_pcl()
