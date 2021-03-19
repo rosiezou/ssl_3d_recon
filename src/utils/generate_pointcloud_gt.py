@@ -19,7 +19,7 @@ GT_POINTCLOUD_NAME = 'gt_pointcloud_1024.npy'
 INPUT_OBJ_FILE_NAME = 'model.obj'
 INTERMEDIATE_OFF_FILE_NAME = 'model.off'
 
-categs = ['02958343']
+categs = ['03001627']
 # categs = ['02691156', '02958343', '03001627']
 
 # Python 3.5 doesn't support random.choices.
@@ -189,6 +189,7 @@ if __name__ == '__main__':
         cat_pcl_data_dir = os.path.join(PCL_DATA_DIR, category)
         print('Category: ', category)
         iteration = 0
+        print('Number of files: ', len(os.listdir(cat_pcl_data_dir)))
         for npy_dir in os.listdir(cat_pcl_data_dir):
             iteration+=1
             output_base_dir = os.path.join(cat_pcl_data_dir, npy_dir)
@@ -197,9 +198,11 @@ if __name__ == '__main__':
                 continue
             # If the output .npy file exists, continue to the next file.
             output_data_path = os.path.join(output_base_dir, GT_POINTCLOUD_NAME)
-            # if os.path.isfile(output_data_path):
-            #     continue
+            if os.path.isfile(output_data_path):
+                continue
             input_filepath = os.path.join(SHAPENET_DATA_DIR, category, npy_dir, INPUT_OBJ_FILE_NAME)
+            if not os.path.isfile(input_filepath):
+                continue
             intermediate_filepath = os.path.join(SHAPENET_DATA_DIR, category, npy_dir, INTERMEDIATE_OFF_FILE_NAME)
             # Convert .obj file to .off file
             print('Converting ', input_filepath, ' to intermediary file: ', intermediate_filepath)

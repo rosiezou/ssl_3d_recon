@@ -164,18 +164,18 @@ def save_outputs(out_dir, iters, feed_dict, img_name):
 
 def save_outputs_pose(out_dir, iters, feed_dict, img_name):
     pose = sess.run(pose_all[0], feed_dict)[0]
-    print('pose img name', img_name)
+    # print('pose img name', img_name)
     np.save('%s/%d_%s_pred_pose.npy'%(out_dir, iters, img_name), pose)
     np.savetxt('%s/%d_%s_pred_pose.txt'%(out_dir, iters, img_name), pose)
 
 
 def save_outputs_pcl(out_dir, iters, feed_dict, img_name):
-    print("out_dir is", out_dir)
+    # print("out_dir is", out_dir)
     _pcl = sess.run([pcl_out[0], pcl_rgb_out[0]], feed_dict)
     _pcl = np.concatenate(_pcl, axis=2)
     for i in range(args.batch_size):
         outFileName = out_dir + "/" + str(iters) + "_" + img_name + "_pcl.npy"
-        print("output file name is", outFileName)
+        # print("output file name is", outFileName)
         np.save('%s/%d_%s_pcl.npy'%(out_dir, iters, img_name), _pcl[i])
         np.savetxt('%s/%d_%s_pcl.txt'%(out_dir, iters, img_name), _pcl[i])
     # return _pcl
@@ -290,9 +290,9 @@ with tf.Session(config=config) as sess:
             print iters, '/', shuffle_len // args.batch_size
         if iters % args.save_n == 0:
             try:
-                print('Iteration num: ', str(iters))
+                # print('Iteration num: ', str(iters))
                 feed_dict, img_name = get_feed_dict()
-                print('Image name: ', img_name)
+                # print('Image name: ', img_name)
             except Exception as expt:
                 print("An exception occurred at iteration", str(iters))
                 continue

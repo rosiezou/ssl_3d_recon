@@ -1,10 +1,10 @@
 python main.py \
-	--exp ./expts/_temp\
+	--exp ./expts_chair/expts/_temp\
 	--gpu 1 \
 	--load_model \
 	--dataset shapenet_train \
 	--_3d_loss_type init_model \
-	--categ car \
+	--categ chair \
 	--loss bce\
 	--affinity_loss \
 	--optimise_pose \
@@ -20,6 +20,6 @@ python main.py \
 	--batch_size 2 \
 	--N_PROJ 4 \
 	--save_n 500 \
-	--save_model_n 2000 \
+	--save_model_n 500 \
 	--N_ITERS 200001 \
-	--print_n 100
+	--print_n 100 \

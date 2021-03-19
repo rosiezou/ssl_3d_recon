@@ -44,10 +44,11 @@ parser.add_argument('--batch_size', type=int, default=8,
         help='batch size to be used')
 parser.add_argument('--N_PTS', type=int, default=1024,
         help='Number of points in point cloud')
+parser.add_argument('--use_custom_gt', action='store_true', help='Flag to decide which ground truth pointloud to use for evaluation.')
 
 FLAGS = parser.parse_args()
 
-categs = ['car']
+categs = ['chair']
 modes = ['test']
 
 #categs = ['airplane', 'car', 'chair']
@@ -133,23 +134,23 @@ def get_feed_dict(cnt, batch_size, models):
             model = models[cnt+i]
             pred_pcl = np.load(model).astype(np.float32)
             model_name = model.split('/')[-1].split('_')[0]
-            gt_pcl = np.load(join(gt_pcl_dir, model_name,
-                'pointcloud_1024.npy')).astype(np.float32)
+            gt_pcl_filename = 'pointcloud_1024.npy' if not FLAGS.use_custom_gt else 'gt_pointcloud_1024.npy'
+            gt_pcl = np.load(join(gt_pcl_dir, model_name, gt_pcl_filename)).astype(np.float32)
             if FLAGS.rotate:
                 pred_pcl = rotate(rotate(pred_pcl[:,:3], 0, 90), 90, 0)
-            
+
             # print("dimensions of pred_pcl", pred_pcl.shape)
             # print("dimensions of gt_pcl", gt_pcl.shape)
 
             gt_pcl_subset = gt_pcl[:,:3]
             pred_pcl_subset = pred_pcl[:,:3]
-            
+
             # print("dimensions of gt_pcl_subset", gt_pcl_subset.shape)
             # print("dimensions of pred_pcl_subset", pred_pcl_subset.shape)
 
             gt.append(gt_pcl_subset)
             pred.append(pred_pcl_subset)
-            
+
 	except KeyboardInterrupt:
 	    sys.exit()
         except:
@@ -170,11 +171,19 @@ dists_forward_scaled, dists_backward_scaled, chamfer_distance_scaled = get_chamf
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
+
+fwd_np_arr = []
+bwd_np_arr = []
+chamfer_np_arr = []
+
 with tf.Session(config=config) as sess:
     for mode in modes:
         for categ in categs:
-            out_dir = join(FLAGS.exp, 'screenshots')
-            create_folder([out_dir])
+            # out_dir = join(FLAGS.exp, 'screenshots')
+            out_fwd_path = join(FLAGS.exp, 'FWD.npy' if not FLAGS.use_custom_gt else "FWD_gt.npy")
+            out_bwd_path = join(FLAGS.exp, 'BWD.npy' if not FLAGS.use_custom_gt else "BWD_gt.npy")
+            out_chamfer_path = join(FLAGS.exp, 'CMF.npy' if not FLAGS.use_custom_gt else "CMF_gt.npy")
+            # create_folder([out_dir])
             categ_id = shapenet_category_to_id[categ]
             N_ERR = 0
             fwd_dist = 0.; bwd_dist = 0.; chamfer_dist = 0.;
@@ -213,6 +222,11 @@ with tf.Session(config=config) as sess:
                 bwd_dist += np.mean(bwd)
                 chamfer_dist += np.mean(chamfer)
 
+                # Add to list
+                fwd_np_arr.append(fwd)
+                bwd_np_arr.append(bwd)
+                chamfer_np_arr.append(chamfer)
+
                 if FLAGS.display:
                     print("disabling display option in VM")
                     # cv2.imshow('img', ip_img)
@@ -235,6 +249,12 @@ with tf.Session(config=config) as sess:
             fwd_dist = (fwd_dist / count) * 1000
             bwd_dist = (bwd_dist / count) * 1000
             chamfer_dist = (chamfer_dist / count) * 1000
+
+            # Save files to output dir from np arrays.
+            np.save(out_fwd_path, np.array(fwd_dist), allow_pickle=True)
+            np.save(out_bwd_path, np.array(bwd_dist), allow_pickle=True)
+            np.save(out_chamfer_path, np.array(chamfer_dist), allow_pickle=True)
+
 
             print 'N_ERR', N_ERR
             print 'Categ: %s, Mode: %s, Chamfer: , Fwd:  Bwd: %.3f, %.3f, %.3f'%(categ, mode, chamfer_dist, fwd_dist, bwd_dist)

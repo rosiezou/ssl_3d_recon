@@ -18,7 +18,7 @@ from src.chamfer_utils import tf_nndistance
 from src.proj_codes import (rgb_cont_proj as get_proj_rgb, perspective_transform,
                             cont_proj as get_proj_mask, world2cam)
 from src.net_archs import recon_net_tiny_rgb_skipconn as recon_net, pose_net
-from src.get_losses import get_3d_loss, get_img_loss, get_pose_loss, get_chamfer_dist
+from src.get_losses import get_3d_loss, get_img_loss, get_pose_loss, get_chamfer_dist, get_k_random_octant_loss
 from src.dataloader import fetch_data
 from src.utils.helper_funcs import create_folder, load_model_from_ckpt, average_stats
 from src.utils.shapenet_taxonomy import shapenet_category_to_id, shapenet_id_to_category
@@ -44,6 +44,8 @@ parser.add_argument('--affinity_loss', action='store_true',
         help='use affinity loss for masks to train the network')
 parser.add_argument('--symmetry_loss', action='store_true',
         help='use symmetry loss for masks to train the network')
+parser.add_argument('--k_random_octant_loss', action="store_true", default = False,
+        help='use k random octant loss to train the network')
 parser.add_argument('--loss', type=str, default='bce',
         help='use either bce loss or bce with logits loss(i.e treat projections\
         as logits), [bce_prob, bce]')
@@ -97,6 +99,8 @@ parser.add_argument('--lambda_pose', type=float, default=0.,
         help='Weight for pose loss')
 parser.add_argument('--lambda_symm', type=float, default=0.,
         help='Weight for symmetry loss')
+parser.add_argument('--use_gt_pcl', action="store_true", default = False, 
+        help='use ground truth point cloud in loss functions')
 
 args = parser.parse_args()
 
@@ -168,6 +172,25 @@ with open(args_file, 'w') as f:
     json.dump(vars(args), f, ensure_ascii=False, indent=2, sort_keys=True)
 print('Dumped args to json file at ', args_file)
 
+def fetch_gt_pcl(img_name_array):
+    gt_batch = []
+    for img_name in img_name_array:
+        img_name = img_name.split('_')[0]
+        gt_data_dir = './data/ShapeNet_v1/%s/%s/gt_pointcloud_1024.npy' % (categ, img_name)
+        gt_batch.append(np.load(gt_data_dir, allow_pickle = True).tolist())
+    outputTensor = tf.convert_to_tensor(gt_batch)
+    return outputTensor
+
+def fetch_k_random_octant_loss_tensor(pcl_out, img_name = ''):
+    k_random_octant_loss = 0.
+    if not(args.use_gt_pcl):
+        for idx in range(args.N_PROJ):
+            k_random_octant_loss += get_k_random_octant_loss(pcl_out[0], pcl_out[idx], 3, 3)
+    else:
+        for idx in range(args.N_PROJ):
+            k_random_octant_loss += get_k_random_octant_loss(fetch_gt_pcl(img_name), pcl_out[idx], 3, 3)
+    return k_random_octant_loss
+
 def save_outputs(out_dir, iters, feed_dict, img_name):
     _img, _mask, pose, _pose_out = sess.run([img_out, mask_out, pose_all[0],
                                              pose_out[1:]], feed_dict)
@@ -214,6 +237,11 @@ if args.use_gt_pose:
 train_loss_summ = []
 loss_names = ['Loss_total', 'Loss_ae', 'Loss_mask', '2D_Ch_Fwd', '2D_Ch_Bwd',
         'Loss_3D', 'Loss_pose', 'Loss_symm']
+
+if args.k_random_octant_loss:
+    print("using k random octant loss")
+    loss_names.append('K_octant')
+
 for idx, name in enumerate(loss_names):
     train_loss_summ.append(tf.placeholder(tf.float32, (),
         name=name))
@@ -223,8 +251,8 @@ pcl_out_rot = []; pcl_out_persp = []; mask_out = [];
 
 with tf.variable_scope('recon_net'):
     pcl_xyz, pcl_rgb = recon_net(img_ip, args)
-pcl_out.append(pcl_xyz)
-pcl_rgb_out.append(pcl_rgb)
+    pcl_out.append(pcl_xyz)
+    pcl_rgb_out.append(pcl_rgb)
 
 if not args.use_gt_pose:
     with tf.variable_scope('pose_net'):
@@ -292,6 +320,13 @@ loss = (args.lambda_ae*img_ae_loss) + (args.lambda_3d*consist_3d_loss) +\
 recon_loss = (args.lambda_ae*img_ae_loss) + (args.lambda_3d*consist_3d_loss)\
                 + (args.lambda_ae_mask*mask_ae_loss) +\
                 (args.lambda_mask_fwd*mask_fwd) + (args.lambda_mask_bwd*mask_bwd)
+
+# if args.k_random_octant_loss:
+#     print("adding k random octant loss to total loss")
+#     k_random_octant_loss = fetch_k_random_octant_loss_tensor(pcl_out)
+#     loss += args.lambda_3d*k_random_octant_loss
+#     recon_loss += args.lambda_3d*k_random_octant_loss
+
 if args.symmetry_loss:
     recon_loss += (args.lambda_symm*symm_loss)
 pose_loss = (args.lambda_ae_pose*img_ae_loss) + (args.lambda_pose*pose_loss_pose)\
@@ -309,7 +344,8 @@ if not args.use_gt_pose:
 # Add tensorboard summaries
 loss_summ = []
 for idx, name in enumerate(loss_names):
-    loss_summ.append(tf.summary.scalar(name, train_loss_summ[idx]))
+    intermediateResult = tf.summary.scalar(name, train_loss_summ[idx])
+    loss_summ.append(intermediateResult)
 train_summ = tf.summary.merge(loss_summ)
 
 # Define savers to load and store models
@@ -362,7 +398,7 @@ with tf.Session(config=config) as sess:
     feed_dict_of, img_name_of = get_feed_dict()
 
     if st_iters == 0:
-        print_str = 'Iters   Total     2D      Mask    Mask_fwd    Mask_bwd     3D     Pose    Symm  Time \n'
+        print_str = 'Iters   Total     2D      Mask    Mask_fwd    Mask_bwd     3D     Pose    Symm  K-Octant Time \n'
         with open(log_file, 'w') as f:
             f.write(print_str)
 
@@ -376,39 +412,72 @@ with tf.Session(config=config) as sess:
 
         # Network training
         if not args.use_gt_pose and args.optimise_pose:
-            batch_out = sess.run([loss, img_ae_loss, mask_ae_loss, mask_fwd,
-                mask_bwd, consist_3d_loss, pose_loss_pose, symm_loss,
-                optim_recon, optim_pose], feed_dict)
+            actionArray = [loss, img_ae_loss, mask_ae_loss, mask_fwd,mask_bwd, consist_3d_loss, pose_loss_pose, symm_loss, optim_recon, optim_pose]
+            if args.k_random_octant_loss:
+                k_random_octant_loss = fetch_k_random_octant_loss_tensor(pcl_out, img_name)
+                loss += args.lambda_3d*k_random_octant_loss
+                recon_loss += args.lambda_3d*k_random_octant_loss
+                actionArray = [loss, img_ae_loss, mask_ae_loss, mask_fwd, mask_bwd, consist_3d_loss, pose_loss_pose, symm_loss, k_random_octant_loss, optim_recon, optim_pose]
+
+            batch_out = sess.run(actionArray, feed_dict)
             # Use averaged loss values for logging
             batch_out_mean = average_stats(batch_out_mean, batch_out[:-2],
                 iters%args.print_n)
+        
+        ## no need to enable this for now...since it'll trigger some cascading variable assignment issues
+        ## i.e. this is dead code for now
         else:
-            batch_out = sess.run([loss, img_ae_loss, mask_ae_loss, mask_fwd,
-                mask_bwd, consist_3d_loss, pose_loss_pose, symm_loss,
-                optim_recon], feed_dict)
+            actionArray = [loss, img_ae_loss, mask_ae_loss, mask_fwd, mask_bwd, consist_3d_loss, pose_loss_pose, symm_loss, optim_recon]
+            if args.k_random_octant_loss:
+                k_random_octant_loss = fetch_k_random_octant_loss_tensor(pcl_out, img_name)
+                loss += args.lambda_3d*k_random_octant_loss
+                recon_loss += args.lambda_3d*k_random_octant_loss
+                actionArray = [loss, img_ae_loss, mask_ae_loss, mask_fwd, mask_bwd, consist_3d_loss, pose_loss_pose, symm_loss, k_random_octant_loss, optim_recon]
+            batch_out = sess.run(actionArray, feed_dict)
             # Use averaged loss values for logging
             batch_out_mean = average_stats(batch_out_mean, batch_out[:-1],
                 iters%args.print_n)
-        _loss, _ae_loss, _mask_ae_loss, _mask_fwd, _mask_bwd, _3d_loss, _pose_loss, _symm_loss = batch_out_mean
 
-        if (iters + 1) % args.print_n == 0:
-            feed_dict_summ = {}
-            for i, item in enumerate(batch_out_mean):
-                feed_dict_summ[train_loss_summ[i]] = item
-            summ = sess.run(train_summ, feed_dict_summ)
-            print 'Iters:%d, Total: %.4f, 2D: %.4f, Mask: %.4f, 2D_Ch_F: %.4f, 2D_Ch_B: %.4f, 3D: %.4f, Pose: %.4f, Symm: %.4f T: %d'\
+
+        ## --------------------------------------------------------------------------
+        ## This next if/else block is spaghetti code
+        if not(args.k_random_octant_loss):
+            _loss, _ae_loss, _mask_ae_loss, _mask_fwd, _mask_bwd, _3d_loss, _pose_loss, _symm_loss = batch_out_mean
+            if (iters + 1) % args.print_n == 0:
+                feed_dict_summ = {}
+                for i, item in enumerate(batch_out_mean):
+                    feed_dict_summ[train_loss_summ[i]] = item
+                summ = sess.run(train_summ, feed_dict_summ)
+                print 'Iters:%d, Total: %.4f, 2D: %.4f, Mask: %.4f, 2D_Ch_F: %.4f, 2D_Ch_B: %.4f, 3D: %.12f, Pose: %.4f, Symm: %.4f, T: %d'\
+                % (iters, _loss, _ae_loss, _mask_ae_loss, _mask_fwd, _mask_bwd, _3d_loss, _pose_loss, _symm_loss, (time.time()-time_st)//60.)
+                # Log loss values in file
+                print_str = '%06d, %.4f, %.4f, %.4f, %.4f, %.4f, %.4f, %.4f, %.4f, %.4f, %04d \n'\
                 % (iters, _loss, _ae_loss, _mask_ae_loss, _mask_fwd, _mask_bwd,
-                  _3d_loss, _pose_loss, _symm_loss, (time.time()-time_st)//60.)
-
-            # Log loss values in file
-            print_str = '%06d, %.4f, %.4f, %.4f, %.4f, %.4f, %.4f, %.4f, %.4f, %04d \n'\
+                  _3d_loss, _pose_loss, _symm_loss, -1, (time.time()-time_st)//60.)
+                with open(log_file, 'a') as f:
+                    f.write(print_str)
+                    
+                # Add to tensorboard summary
+                train_writer.add_summary(summ, iters)
+        
+        else:
+            _loss, _ae_loss, _mask_ae_loss, _mask_fwd, _mask_bwd, _3d_loss, _pose_loss, _symm_loss, _k_random_octant_loss = batch_out_mean
+            if (iters + 1) % args.print_n == 0:
+                feed_dict_summ = {}
+                for i, item in enumerate(batch_out_mean):
+                    feed_dict_summ[train_loss_summ[i]] = item
+                summ = sess.run(train_summ, feed_dict_summ)
+                print 'Iters:%d, Total: %.4f, 2D: %.4f, Mask: %.4f, 2D_Ch_F: %.4f, 2D_Ch_B: %.4f, 3D: %.12f, Pose: %.4f, Symm: %.4f, K_octant: %.12f T: %d'\
+                % (iters, _loss, _ae_loss, _mask_ae_loss, _mask_fwd, _mask_bwd, _3d_loss, _pose_loss, _symm_loss, _k_random_octant_loss, (time.time()-time_st)//60.)
+                # Log loss values in file
+                print_str = '%06d, %.4f, %.4f, %.4f, %.4f, %.4f, %.4f, %.4f, %.4f, %.4f, %04d \n'\
                 % (iters, _loss, _ae_loss, _mask_ae_loss, _mask_fwd, _mask_bwd,
-                  _3d_loss, _pose_loss, _symm_loss, (time.time()-time_st)//60.)
-            with open(log_file, 'a') as f:
-                f.write(print_str)
+                  _3d_loss, _pose_loss, _symm_loss, _k_random_octant_loss, (time.time()-time_st)//60.)
+                with open(log_file, 'a') as f:
+                    f.write(print_str)
 
-            # Add to tensorboard summary
-            train_writer.add_summary(summ, iters)
+                # Add to tensorboard summary
+                train_writer.add_summary(summ, iters)
 
         if iters % args.save_n == 0:
             # Save image outputs

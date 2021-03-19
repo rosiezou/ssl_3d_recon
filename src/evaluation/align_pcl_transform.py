@@ -22,7 +22,7 @@ from shapenet_taxonomy import shapenet_category_to_id
 
 
 # Change category id as required
-categ = 'car'
+categ = 'chair'
 categ = shapenet_category_to_id[categ]
 N_PTS = 1024
 N_ITERS = 5000
@@ -30,9 +30,13 @@ batch_size = 1
 lr = 1e-3
 print_n = 100
 save_outputs = True
+# Change flag to use custom ground truth.
+use_custom_gt = True
+
+gt_pcl_filename = 'pointcloud_1024.npy' if not use_custom_gt else 'gt_pointcloud_1024.npy'
 
 # Change experiment directory as required
-exp_dir = 'SAVED_PCL/expts/temp'
+exp_dir = '../../expts_chair/expts/_temp'
 
 ## this is hard coded...again...
 ## log_proj_pcl_$MODE is the regex for it, MODE is set in save_pcl flags
@@ -40,7 +44,7 @@ pred_pcl_dir = join(exp_dir, 'log_proj_pcl_disp_test')
 print("pred_pcl_dir is", pred_pcl_dir)
 
 gt_pcl_dir = '../../data/ShapeNet_v1/%s'%categ
-out_dir = join(exp_dir, 'log_proj_pcl_test_rot')
+out_dir = join(exp_dir, 'log_proj_pcl_test_rot' if not use_custom_gt else 'log_proj_pcl_test_rot_gt')
 if not os.path.exists(out_dir):
     os.makedirs(out_dir)
 
@@ -63,8 +67,7 @@ def get_feed_dict(cnt, models_list):
         # print("model name is", model_name)
         # print("model_list first element is", models_list[0])
         # print("pred_pcl_dir is", pred_pcl_dir)
-        _gt_pcl = np.load(join(gt_pcl_dir, model_name,
-            'pointcloud_1024.npy'))
+        _gt_pcl = np.load(join(gt_pcl_dir, model_name, gt_pcl_filename))
         gt_pcl_list.append(_gt_pcl)
         pred_pcl_list.append(_pred_pcl)
     pred_pcl_list = np.stack(pred_pcl_list, 0)
@@ -156,7 +159,7 @@ with tf.Session(config=config) as sess:
             np.save(join(out_dir, model_name+'_pred.npy'), _pred_pcl)
 
         _rotmat, _angles = sess.run([rot_mat, angles], feed_dict)
-        np.savetxt(join(exp_dir, 'angles.txt'), _angles * 180. / np.pi)
-        np.save(join(exp_dir, 'angles.npy'), _angles * 180. / np.pi)
+        np.savetxt(join(exp_dir, 'angles.txt' if not use_custom_gt else 'angles_gt.txt'), _angles * 180. / np.pi)
+        np.save(join(exp_dir, 'angles.npy' if not use_custom_gt else 'angles_gt.npy'), _angles * 180. / np.pi)
         print sess.run(rotmat_gt)
     print sess.run(rot_mat, feed_dict)
